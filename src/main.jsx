@@ -1,10 +1,130 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import {
-  Github, Linkedin, Mail, Phone, MapPin, ArrowUpRight, Download, Menu, X,
-  Search, Check, Code2, Smartphone, Cpu, ShieldCheck, Zap, Layers, Sparkles, FileText, ExternalLink
+import { 
+  Github, Linkedin, Mail, Phone, MapPin, ArrowUpRight, Download, Menu, X, 
+  Search, Check, Code2, Smartphone, Cpu, ShieldCheck, Zap, Layers, Sparkles, FileText, ExternalLink 
 } from 'lucide-react';
 import './styles.css';
+
+// --- TYPEWRITER COMPONENT ---
+const titles = [
+  "Senior iOS Developer.",
+  "SwiftUI & Swift Architect.",
+  "Core Bluetooth & BLE Specialist.",
+  "VoIP & Video Stream Engineer."
+];
+
+function Typewriter() {
+  const [titleIdx, setTitleIdx] = useState(0);
+  const [subIdx, setSubIdx] = useState(0);
+  const [reverse, setReverse] = useState(false);
+
+  useEffect(() => {
+    if (subIdx === titles[titleIdx].length + 1 && !reverse) {
+      const timeout = setTimeout(() => setReverse(true), 2200);
+      return () => clearTimeout(timeout);
+    }
+
+    if (subIdx === 0 && reverse) {
+      setReverse(false);
+      setTitleIdx((prev) => (prev + 1) % titles.length);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setSubIdx((prev) => prev + (reverse ? -1 : 1));
+    }, reverse ? 40 : 80);
+
+    return () => clearTimeout(timeout);
+  }, [subIdx, titleIdx, reverse]);
+
+  const currentText = titles[titleIdx].substring(0, subIdx);
+  const isHighlighted = titleIdx !== 0;
+
+  return (
+    <span className="typewriterText">
+      {isHighlighted ? <em>{currentText}</em> : currentText}
+      <span className="typewriterCursor" />
+    </span>
+  );
+}
+
+// --- PARTICLE CANVAS COMPONENT ---
+function ParticleCanvas() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    const particles = Array.from({ length: 45 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      radius: Math.random() * 2 + 1,
+      alpha: Math.random() * 0.5 + 0.2
+    }));
+
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 130) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(0, 122, 255, ${0.15 * (1 - dist / 130)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw particles
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 94, 54, ${p.alpha})`;
+        ctx.fill();
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="canvasBg" />;
+}
 
 // --- DATA DEFINITIONS ---
 
@@ -217,7 +337,7 @@ final class PaymentEngine: ObservableObject {
 }`
 };
 
-// --- APP COMPONENT ---
+// --- MAIN APP COMPONENT ---
 
 function App() {
   const [navOpen, setNavOpen] = useState(false);
@@ -228,6 +348,25 @@ function App() {
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(false);
+
+  // SCROLL REVEAL OBSERVER HOOK
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    const elements = document.querySelectorAll('.reveal');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [activeCategory, searchQuery]);
 
   const closeNav = () => setNavOpen(false);
 
@@ -241,7 +380,7 @@ function App() {
     triggerToast(`Copied ${label} to clipboard!`);
   };
 
-  const filteredSkills = skills.filter(skill => {
+  const filteredSkills = skills.filter((skill) => {
     const matchesCategory = activeCategory === 'all' || skill.cat === activeCategory;
     const matchesSearch = skill.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -254,8 +393,24 @@ function App() {
     setTimeout(() => setFormSubmitted(false), 4000);
   };
 
+  // 3D MAGNETIC TILT HOVER HANDLER FOR PROFILE CARD
+  const profileCardRef = useRef(null);
+  const handleMouseMove = (e) => {
+    const card = profileCardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    card.style.transform = `rotateY(${x / 18}deg) rotateX(${-y / 18}deg)`;
+  };
+  const handleMouseLeave = () => {
+    const card = profileCardRef.current;
+    if (card) card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+  };
+
   return (
     <div>
+      <ParticleCanvas />
       <div className="bgGlow" />
       <div className="gridPattern" />
 
@@ -298,13 +453,13 @@ function App() {
       <main>
         {/* HERO SECTION */}
         <section id="home" className="section hero">
-          <div className="heroCopy">
+          <div className="heroCopy reveal">
             <div className="eyebrow">
               <span className="dot"></span> Available for Senior iOS Roles
             </div>
             <h1>
-              Senior iOS<br />
-              <em>Developer.</em>
+              I'm Subhash<br />
+              <Typewriter />
             </h1>
             <p className="heroSubtitle">
               Specialized in building high-performance native iOS applications with Swift, SwiftUI, and UIKit — from Clean Architecture and hardware Bluetooth integration to VoIP and App Store delivery.
@@ -336,8 +491,13 @@ function App() {
           </div>
 
           {/* HERO VISUAL PROFILE COLUMN */}
-          <div className="heroVisual">
-            <div className="profileCard">
+          <div className="heroVisual reveal delay-1">
+            <div 
+              className="profileCard" 
+              ref={profileCardRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+            >
               <div className="profileImageWrapper">
                 <img
                   src="/profile.png"
@@ -393,14 +553,14 @@ function App() {
 
         {/* ABOUT SECTION */}
         <section id="about" className="section">
-          <div className="sectionLabel">01 / ABOUT ME</div>
+          <div className="sectionLabel reveal">01 / ABOUT ME</div>
           <div className="aboutGrid">
-            <div>
+            <div className="reveal delay-1">
               <h2 className="sectionTitle">
                 Architecting <em>scalable, resilient & fast</em> iOS software.
               </h2>
             </div>
-            <div>
+            <div className="reveal delay-2">
               <p className="aboutLead">
                 With over 6 years of focused native iOS engineering experience, I transform complex business specifications into clean, fluid mobile experiences.
               </p>
@@ -427,15 +587,15 @@ function App() {
         {/* SKILLS TOOLKIT SECTION */}
         <section id="skills" className="skillsSection">
           <div className="skillsContainer">
-            <div className="sectionLabel">02 / TECHNICAL TOOLKIT</div>
-            <div className="sectionHead">
+            <div className="sectionLabel reveal">02 / TECHNICAL TOOLKIT</div>
+            <div className="sectionHead reveal delay-1">
               <div>
                 <h2>Mastered <em>Technologies.</em></h2>
                 <p style={{ marginTop: '8px' }}>Categorized breakdown of technical skills acquired over 6+ years in iOS development.</p>
               </div>
             </div>
 
-            <div className="skillsControls">
+            <div className="skillsControls reveal delay-2">
               <div className="searchBox">
                 <Search size={18} />
                 <input
@@ -448,7 +608,7 @@ function App() {
               </div>
 
               <div className="skillTabs">
-                {skillCategories.map(cat => (
+                {skillCategories.map((cat) => (
                   <button
                     key={cat.id}
                     className={`skillTab ${activeCategory === cat.id ? 'active' : ''}`}
@@ -461,8 +621,8 @@ function App() {
             </div>
 
             <div className="skillsGrid">
-              {filteredSkills.map(skill => (
-                <div className="skillCard" key={skill.name}>
+              {filteredSkills.map((skill, idx) => (
+                <div className={`skillCard reveal delay-${(idx % 4) + 1}`} key={skill.name}>
                   <div className="skillDot" />
                   <span className="skillName">{skill.name}</span>
                 </div>
@@ -473,8 +633,8 @@ function App() {
 
         {/* PROJECTS SECTION */}
         <section id="projects" className="section">
-          <div className="sectionLabel">03 / FEATURED WORK</div>
-          <div className="sectionHead">
+          <div className="sectionLabel reveal">03 / FEATURED WORK</div>
+          <div className="sectionHead reveal delay-1">
             <div>
               <h2>Key Production <em>Projects.</em></h2>
               <p style={{ marginTop: '8px' }}>Real-world applications built for payments, VoIP communications, live streaming, and education.</p>
@@ -482,8 +642,8 @@ function App() {
           </div>
 
           <div className="projectGrid">
-            {projects.map(project => (
-              <div className="projectCard" key={project.id}>
+            {projects.map((project, idx) => (
+              <div className={`projectCard reveal delay-${idx + 1}`} key={project.id}>
                 <div>
                   <div className="projectTop">
                     <span className="projectTag">{project.tag}</span>
@@ -495,7 +655,7 @@ function App() {
 
                 <div>
                   <div className="projectStack">
-                    {project.stack.map(tech => (
+                    {project.stack.map((tech) => (
                       <span className="stackBadge" key={tech}>{tech}</span>
                     ))}
                   </div>
@@ -517,8 +677,8 @@ function App() {
 
         {/* CAREER TIMELINE SECTION */}
         <section id="experience" className="section" style={{ paddingTop: '40px' }}>
-          <div className="sectionLabel">04 / CAREER JOURNEY</div>
-          <div className="sectionHead">
+          <div className="sectionLabel reveal">04 / CAREER JOURNEY</div>
+          <div className="sectionHead reveal delay-1">
             <div>
               <h2>Professional <em>Experience.</em></h2>
               <p style={{ marginTop: '8px' }}>Track record of leadership, mobile development, and architecture across tech companies.</p>
@@ -527,7 +687,7 @@ function App() {
 
           <div className="timeline">
             {experience.map((job, idx) => (
-              <div className="timelineCard" key={idx}>
+              <div className={`timelineCard reveal delay-${(idx % 3) + 1}`} key={idx}>
                 <div className="timelineHeader">
                   <div>
                     <h3 className="timelineCompany">{job.company}</h3>
@@ -543,7 +703,7 @@ function App() {
                 </ul>
 
                 <div className="projectStack" style={{ marginTop: '20px', marginBottom: 0 }}>
-                  {job.stack.map(st => (
+                  {job.stack.map((st) => (
                     <span className="stackBadge" key={st}>{st}</span>
                   ))}
                 </div>
@@ -554,14 +714,14 @@ function App() {
 
         {/* EDUCATION SECTION */}
         <section className="section" style={{ paddingTop: '20px' }}>
-          <div className="sectionLabel">05 / EDUCATION</div>
+          <div className="sectionLabel reveal">05 / EDUCATION</div>
           <div className="eduGrid">
-            <div className="eduCard">
+            <div className="eduCard reveal delay-1">
               <span className="eduPeriod">2012 – 2015</span>
               <h3 className="eduDegree">Master of Computer Application (MCA)</h3>
               <p className="eduCollege">SGSITS College, Indore • RGPV University</p>
             </div>
-            <div className="eduCard">
+            <div className="eduCard reveal delay-2">
               <span className="eduPeriod">2009 – 2012</span>
               <h3 className="eduDegree">Bachelor of Computer Application (BCA)</h3>
               <p className="eduCollege">Srishti Computer Education, Betul (M.P.)</p>
@@ -571,7 +731,7 @@ function App() {
 
         {/* CONTACT SECTION */}
         <section id="contact" className="section">
-          <div className="contactGrid">
+          <div className="contactGrid reveal">
             <div className="contactInfo">
               <div className="sectionLabel">06 / GET IN TOUCH</div>
               <h2>Let's build extraordinary <em>iOS apps.</em></h2>
@@ -635,7 +795,7 @@ function App() {
 
             <div className="modalSectionTitle">Technology Stack</div>
             <div className="projectStack">
-              {activeProject.stack.map(s => (
+              {activeProject.stack.map((s) => (
                 <span className="stackBadge" key={s}>{s}</span>
               ))}
             </div>
