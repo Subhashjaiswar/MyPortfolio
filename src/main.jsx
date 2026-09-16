@@ -161,7 +161,7 @@ const experience = [
   },
   {
     company: 'The OneInfotech',
-    role: 'Senior iOS Developer',
+    role: 'Junior iOS Developer',
     period: '03/2019 – 02/2021',
     location: 'Indore, India',
     bullets: [
