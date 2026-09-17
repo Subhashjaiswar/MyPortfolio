@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { 
-  Github, Linkedin, Mail, Phone, MapPin, ArrowUpRight, Download, Menu, X, 
-  Search, Check, Code2, Smartphone, Cpu, ShieldCheck, Zap, Layers, Sparkles, FileText, ExternalLink 
+import {
+  Github, Linkedin, Mail, Phone, MapPin, ArrowUpRight, Download, Menu, X,
+  Search, Check, Code2, Smartphone, Cpu, ShieldCheck, Zap, Layers, Sparkles, FileText, ExternalLink
 } from 'lucide-react';
 import './styles.css';
 
@@ -425,7 +425,7 @@ function App() {
       <header className="nav">
         <a className="brand" href="#home" onClick={closeNav}>
           <div className="brandLogo">SJ</div>
-          Subhash<span>.ios</span>
+          Subhash Jaiswar<span>.ios</span>
         </a>
 
         <button className="menuBtn" onClick={() => setNavOpen(!navOpen)} aria-label="Toggle Navigation">
@@ -492,8 +492,8 @@ function App() {
 
           {/* HERO VISUAL PROFILE COLUMN */}
           <div className="heroVisual reveal delay-1">
-            <div 
-              className="profileCard" 
+            <div
+              className="profileCard"
               ref={profileCardRef}
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
